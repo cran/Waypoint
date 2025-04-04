@@ -83,7 +83,7 @@
 #' dm <- c(5130.4659, 4932.7726, 4806.4339, 3853.3696, 0.0000, -3706.7044, -5306.2869, -2514.4093,
 #'         -007.6754, 1823.9137, -12246.7203, -7702.1145, 0.0000, -1217.3178, 7331.0370, -5731.1536)
 #'
-#' ## Create an unnamed "coords" object of degrees and minutes (fmt = 2)
+#' ## Create an unnamed "coords" object in degrees and minutes (fmt = 2)
 #' ## (Latitude and longitude unspecified)
 #' as_coords(dm, fmt = 2)
 #'
@@ -191,7 +191,7 @@ as_coords <- function(object, ...)
 #'     lon = c(-00740.53, 182354.82, -1224643.22, -770206.87, 0, -121719.07, 733102.22, -573109.21)
 #' )
 #'
-#' ## Create "waypoints" object of degrees, minutes and seconds (fmt = 3)
+#' ## Create "waypoints" object in degrees, minutes and seconds (fmt = 3)
 #' as_waypoints(wp1, fmt = 3)
 #'
 #' ## Show as an ordinary R data frame
@@ -206,7 +206,7 @@ as_coords <- function(object, ...)
 #'     lon = c(-0.127924, 18.398562, -122.778671, -77.035242, 0, -12.28863, 73.517283, -57.519227)
 #' )
 #'
-#' ## Create unnamed "waypoints" object of decimal degrees (default fmt = 1)
+#' ## Create unnamed "waypoints" object in decimal degrees (default fmt = 1)
 #' as_waypoints(wp2)
 #'
 #' ## Add waypoint names as row.names
@@ -394,6 +394,10 @@ convert <- function(x, ...)
 #' ## 'silently' using S3 print() method
 #' dm
 #'
+#' ## Print explicitly using S3 print() method, specifying
+#' ## the maximal number of entries to be printed
+#' print(dm, max = 14)
+#'
 #' ## Format as a fixed-width character vector,
 #' ## with names...
 #' format(dm)
@@ -417,6 +421,10 @@ convert <- function(x, ...)
 #' ## 'silently' using S3 print() method
 #' wp
 #'
+#' ## Print explicitly using S3 print() method, specifying
+#' ## the maximal number of entries to be printed
+#' print(wp, max = 21)
+#'
 #' ## Format as a fixed-width character vector,
 #' ## with names...
 #' format(wp)
@@ -435,15 +443,18 @@ convert <- function(x, ...)
 
 print.coords <- function (x, ..., max = NULL) {
     n <- length(x)
-    fmtx <- format(x, ...)
+    validate(x, force = FALSE)
     if (is.null(max))
         max <- getOption("max.print", 99999L)
     if (!is.finite(max)) 
         stop("invalid 'max' / getOption(\"max.print\"): ", max)
     omit <- (n0 <- max %/% (if (is.null(names(x))) 1L else 2L)) < n
-    if (omit) 
-        fmtx <- fmtx[seq_len(n0)]
-    writeLines(fmtx)
+    if (omit) {
+        x0 <- x[seq_len(n0)]
+        attributes(x0) <- lapply(attributes(x), \(x) x[seq_len(min(length(x), n0))])
+    } else
+        x0 <- x
+    writeLines(format(x0, ...))
     if (omit) 
         cat(" [ reached 'max' / getOption(\"max.print\") -- omitted", n - n0, "entries ]\n")
     invisible(x)
@@ -458,14 +469,15 @@ print.coords <- function (x, ..., max = NULL) {
 
 print.waypoints <- function (x, ..., max = NULL) {
     n <- length(row.names(x))
-    fmtx <- format(x, ...)
+    validate(x, force = FALSE)
     if (is.null(max))
         max <- getOption("max.print", 99999L)
     if (!is.finite(max)) 
         stop("invalid 'max' / getOption(\"max.print\"): ", max)
     omit <- (n0 <- max %/% 3L) < n
     if (omit) 
-        fmtx <- fmtx[seq_len(n0)]
+         x <- x[seq_len(n0), , drop = FALSE]
+    fmtx <- format(x, ...)
     writeLines(ll_headers(fmtx, attr(x, "fmt")))
     writeLines(fmtx)
     if (omit) 
@@ -494,9 +506,19 @@ print.waypoints <- function (x, ..., max = NULL) {
 #' attributes in the case of a \code{"waypoints"} object will be set to \code{FALSE} for any
 #' non-compliant coordinate values.
 #'
+#' Argument \code{force} is primarily intended for use by the \code{print()} methods for classes
+#'   \code{"coords"} and \code{"waypoints"} and should otherwise left as the default value
+#'   \code{TRUE}.
+#'
 #' @family validate
 #' @seealso
 #' \code{"\link{coords}"} and \code{"\link{waypoints}"}.
+#'
+#' @param force \code{logical} signifying whether, if \code{TRUE}, to perform full \emph{de novo}
+#'   revalidation or, if \code{FALSE}, simply check existing \code{"valid"} attribute in the case
+#'   of a \code{"coords"} object, or \code{"validlat"} and \code{"validlon"} attributes in the case
+#'   of a \code{"waypoints"} object and only revalidate if any of these are missing; default
+#'   \code{TRUE}.
 #'
 #' @inheritParams coords
 #' @inheritParams convert

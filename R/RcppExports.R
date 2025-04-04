@@ -17,8 +17,8 @@ convert.coords <- function(x, fmt, ...) {
 }
 
 #' @rdname validate
-validate.coords <- function(x, ...) {
-    .Call(`_Waypoint_validatecoords`, x)
+validate.coords <- function(x, ..., force = TRUE) {
+    .Call(`_Waypoint_validatecoords`, x, force)
 }
 
 #' @rdname format
@@ -37,8 +37,8 @@ convert.waypoints <- function(x, fmt, ...) {
 }
 
 #' @rdname validate
-validate.waypoints <- function(x, ...) {
-    .Call(`_Waypoint_validatewaypoints`, x)
+validate.waypoints <- function(x, ..., force = TRUE) {
+    .Call(`_Waypoint_validatewaypoints`, x, force)
 }
 
 #' @rdname format

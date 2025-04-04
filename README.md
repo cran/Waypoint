@@ -8,7 +8,15 @@ degrees and minutes, and (iii) degrees, minutes and seconds formats.
 
 ## Installation
 
-You can install the development version of Waypoint from [GitHub](https://github.com/) with:
+You can install the currently-released version from CRAN with this R
+command:
+
+``` r
+install.packages("Waypoint")
+```
+
+Alternatively, you can install the latest development version of Waypoint
+from [GitHub](https://github.com/) with:
       
 ``` r
 # install.packages("devtools")
@@ -42,8 +50,10 @@ devtools::install_github("Mark-Eis/Waypoint")
   geographic locations with `validate()` and identifies individual invalid
   values with `review()`.
 
-* Use `format()` and `print()` S3 methods for neat formatting and printing
-  of objects of classes "`coords`" and "`waypoints`".
+* Use `format()` and
+  [`print()`](https://mark-eis.github.io/Waypoint/reference/format.html) S3
+  methods for neat formatting and printing of objects of classes "`coords`" and
+  "`waypoints`".
   
 #### Methodology  
 

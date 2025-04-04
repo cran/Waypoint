@@ -80,6 +80,10 @@ for use by the \code{print()} method for class \code{"waypoints"}.
 ## 'silently' using S3 print() method
 dm
 
+## Print explicitly using S3 print() method, specifying
+## the maximal number of entries to be printed
+print(dm, max = 14)
+
 ## Format as a fixed-width character vector,
 ## with names...
 format(dm)
@@ -102,6 +106,10 @@ format(dm, usenames = FALSE)
 ## Print named "waypoints" object in degrees and minutes,
 ## 'silently' using S3 print() method
 wp
+
+## Print explicitly using S3 print() method, specifying
+## the maximal number of entries to be printed
+print(wp, max = 21)
 
 ## Format as a fixed-width character vector,
 ## with names...

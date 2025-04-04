@@ -2,11 +2,11 @@ Package: Waypoint
 Type: Package
 Title: Convert, Validate, Format and Print Geographic Coordinates and
         Waypoints
-Version: 1.1.0
+Version: 1.1.1
 Authors@R: 
     person("Mark", "Eisler", email = "mark.eisler@bristol.ac.uk", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-6843-3345"))
-Date: 2025-03-17
+Date: 2025-04-04
 Description: Convert, validate, format and elegantly print geographic coordinates and waypoints
    (paired latitude and longitude values) in decimal degrees, degrees and minutes, and degrees,
    minutes and seconds using high performance C++ code to enable rapid conversion and formatting
@@ -18,9 +18,9 @@ RoxygenNote: 7.3.1
 Encoding: UTF-8
 URL: https://mark-eis.github.io/Waypoint/
 NeedsCompilation: yes
-Packaged: 2025-03-17 22:54:08 UTC; runner
+Packaged: 2025-04-04 10:27:14 UTC; runner
 Author: Mark Eisler [aut, cre, cph] (<https://orcid.org/0000-0001-6843-3345>)
 Maintainer: Mark Eisler <mark.eisler@bristol.ac.uk>
 Depends: R (>= 4.1.0)
 Repository: CRAN
-Date/Publication: 2025-03-19 13:00:01 UTC
+Date/Publication: 2025-04-04 11:40:02 UTC
