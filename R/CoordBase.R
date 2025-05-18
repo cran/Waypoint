@@ -344,6 +344,17 @@ convert <- function(x, ...)
 #' output elegantly formatted \code{character} vector representations of their arguments, which are
 #' used by their respective \code{print()} methods.
 #'
+#' Objects of class \code{"coords"} specified in \emph{degrees and minutes} or in \emph{degrees,
+#' minutes and seconds} and with a \code{"latlon"} attribute, and similarly specified
+#' \code{"waypoints"} objects are formatted with individual coordinate values followed by a capital
+#' letter representing the \emph{cardinal direction} i.e., \samp{N}, \samp{E}, \samp{S} or \samp{W}.
+#' \code{"coords"} objects lacking a \code{"latlon"} attribute have formatted values followed by two
+#' possible cardinal directions in parentheses i.e., \samp{(N/E)} for positive values and
+#' \samp{(S/W)} for negative values. Values of \code{"coords"} or \code{"waypoints"} objects in
+#' \emph{decimal degrees} are formatted prefixed with their sign, if negative; cardinal direction is
+#' not shown, but for \code{"coords"} objects with a \code{"latlon"} attribute, the formatted values
+#' are suffixed by either \samp{lat} or \samp{lon}.
+#'
 #' Prior to formatting and printing, \code{"coords"} or \code{"waypoints"} objects are checked to
 #' ensure that their \code{"valid"} attribute (in the case of a \code{"coords"} object), or
 #' \code{"validlat"} and \code{"validlon"} attributes (in the case of a \code{"waypoints"} object)
@@ -351,10 +362,17 @@ convert <- function(x, ...)
 #' \code{FALSE} i.e. invalid values, a warning is issued and similarly, if these attributes are
 #' missing, a warning is issued and the objects are re-validated as described under
 #' \code{\link{validate}()}.
-#' 
-#' \code{ll_headers()} outputs the headings \verb{"Latitude ... Longitude"} formatted to the
-#' same width as argument \code{aswidth}, adjusted for format \code{fmt} and is primarily intended
-#' for use by the \code{print()} method for class \code{"waypoints"}.
+#'
+#' The optional argument \code{fmt} may be used to specify the coordinate format desired for
+#' formatting or printing \code{"coords"} or \code{"waypoints"} objects, see the \code{fmt} argument
+#' for \code{\link[=coords]{as_coords}()} and \code{\link[=waypoints]{as_waypoints}()}; using the
+#' default, \code{fmt = 0L}, will format or print in the existing coordinate format.
+#'
+#' \code{ll_headers()} outputs the headings \verb{"Latitude ... Longitude"} formatted to the width
+#' of argument \code{width}, adjusted for format \code{fmt} and is primarily intended for use by the
+#' \code{print()} method for class \code{"waypoints"}. Likewise argument \code{validate} is used by
+#' the \code{print()} methods for classes \code{"coords"} and \code{"waypoints"} to prevent
+#' unecessary replicate validation and may otherwise be left as the default.
 #'
 #' @seealso
 #' \code{\link[base:format]{format}()}, \code{\link[base:print]{print}()},
@@ -363,7 +381,10 @@ convert <- function(x, ...)
 #' @param usenames \code{logical}, whether or not to include names in formatted output; default
 #' \code{TRUE}.
 #'
-#' @param aswidth \code{character} vector, used to match width of headers to formatted output.
+#' @param validate \code{logical}, whether or not to \code{\link{validate}} \code{x} before
+#' formatting; default \code{TRUE}.
+#'
+#' @param width \code{character} vector, used to match width of headers to formatted output.
 #'
 #' @inheritParams coords
 #' @inheritParams convert
@@ -391,7 +412,7 @@ convert <- function(x, ...)
 #' }
 #'
 #' ## Print named "coords" object in degrees and minutes,
-#' ## 'silently' using S3 print() method
+#' ## implicitly using S3 print() method
 #' dm
 #'
 #' ## Print explicitly using S3 print() method, specifying
@@ -404,6 +425,9 @@ convert <- function(x, ...)
 #'
 #' ## ...or without them
 #' format(dm, usenames = FALSE)
+#'
+#' ## Format as decimal degrees,
+#' format(dm, fmt = 1)
 #'
 #' ###
 #' ## Continuing example from `as_waypoints()`...
@@ -418,12 +442,15 @@ convert <- function(x, ...)
 #' }
 #'
 #' ## Print named "waypoints" object in degrees and minutes,
-#' ## 'silently' using S3 print() method
+#' ## implicitly using S3 print() method
 #' wp
 #'
 #' ## Print explicitly using S3 print() method, specifying
 #' ## the maximal number of entries to be printed
 #' print(wp, max = 21)
+#'
+#' ## Print as degrees and minutes
+#' print(wp, fmt = 2)
 #'
 #' ## Format as a fixed-width character vector,
 #' ## with names...
@@ -454,7 +481,7 @@ print.coords <- function (x, ..., max = NULL) {
         attributes(x0) <- lapply(attributes(x), \(x) x[seq_len(min(length(x), n0))])
     } else
         x0 <- x
-    writeLines(format(x0, ...))
+    writeLines(format(x0, validate = FALSE, ...))
     if (omit) 
         cat(" [ reached 'max' / getOption(\"max.print\") -- omitted", n - n0, "entries ]\n")
     invisible(x)
@@ -477,8 +504,8 @@ print.waypoints <- function (x, ..., max = NULL) {
     omit <- (n0 <- max %/% 3L) < n
     if (omit) 
          x <- x[seq_len(n0), , drop = FALSE]
-    fmtx <- format(x, ...)
-    writeLines(ll_headers(fmtx, attr(x, "fmt")))
+    fmtx <- format(x, validate = FALSE, ...)
+    writeLines(ll_headers((nchar(fmtx)[1]), attr(x, "fmt")))
     writeLines(fmtx)
     if (omit) 
         cat(" [ reached 'max' / getOption(\"max.print\") -- omitted", n - n0, "rows ]\n")
