@@ -1,3 +1,40 @@
+# Waypoint 1.3.0
+
+* Improve documentation of `[<-.coords` replacement operator and `validate()` examples (#160).
+
+* Remove abstruse `convert_switch<>()` function call from `as_coords()` and `as_waypoints` (#159).
+
+* Rectify  erroneous "Invalid coords!" warning after revalidating valid `coords` (#158).
+
+* Simplify `validated()` using bitwise return value and rename as `template<NumericVector_or_DataFrame T>`
+  `check_logical_attr(T , const char*)` (#157).
+
+* Protect base class functions without public interface (#156).
+
+* Replace `Validator` functor class with lambda in new member function `Coordbase::validate0()` (#155).
+
+* Replace `Convert` functor class with lambdas selected using `if constexpr … else` statement in new
+  member function `Coordbase::convert0()` (#154).
+
+* `if constexpr` statements within templated functions (#153).
+
+* `validate()` as pure virtual function in `Coordbase` (#152).
+
+* Replace `Format` functor class with lambdas selected using `if constexpr … else` statement in new
+  member function `Coordbase::format0()` (#149, #153).
+
+* Abstract replicated code in `WayPoint::format()` to a single function `WayPoint::format2()` (#146).
+
+* `FormatLL<>` functors replaced with lambdas in `Coord::format()` and `WayPoint::format()` (#145).
+
+* Replace `static_assert` statements in templates with concepts (#144).
+
+* Remove redundant code from `as_waypoints(DataFrame, int = 1)` (#143).
+
+* Simplify `fmt::formatter<CoordType>::format(CoordType, format_context&)` (#142).
+
+* Improve `get_coordtype(int i)` (#141, #142).
+
 # Waypoint 1.2.1
 
 * S3 `print()` methods for `"coords"` and `"waypoints"` now employ the null coalescing operator

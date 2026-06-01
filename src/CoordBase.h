@@ -7,11 +7,18 @@
 
 #define FMT_HEADER_ONLY
 //#include </opt/homebrew/Cellar/fmt/11.1.4/include/fmt/base.h>		// verbose path not found!
-//#include <fmt/base.h>		// …fmt/*.h copied to /Library/R/arm64/4.5/library/Rcpp/include.  Works, but not in pkgdown, but not in pkgdown
-#include "fmt/base.h"		// …fmt/*.h copied to …/R/Packages/Waypoint/src.  Works, but not in pkgdown, but not in pkgdown
+//#include <fmt/base.h>		// …fmt/*.h copied to /Library/R/arm64/4.5/library/Rcpp/include.  Works, but not in pkgdown
+#include "fmt/base.h"		// …fmt/*.h copied to …/R/Packages/Waypoint/src.  Works, but not in pkgdown
 
 /// __________________________________________________
 /// Class and Function declarations
+
+/// Concept
+template <typename T>
+concept NumericVector_or_DataFrame = std::is_same<NumericVector, T>::value || std::is_same<DataFrame, T>::value;
+
+template <typename T>
+concept List_or_DataFrame = std::is_same<List, T>::value || std::is_same<DataFrame, T>::value;
 
 /// __________________________________________________
 /// __________________________________________________
@@ -30,11 +37,13 @@ inline double polish(double);
 /// __________________________________________________
 /// __________________________________________________
 /// Utility
-template<class T, class U> 
+template<NumericVector_or_DataFrame T, class U> 
 inline vector<U> get_vec_attr(const T&, const char*);
-template<class T>
+template<NumericVector_or_DataFrame T>
 inline int get_fmt_attribute(const T&);
-template<class T>
+template<NumericVector_or_DataFrame T>
+int check_logical_attr(T t, const char* attrname);
+template<NumericVector_or_DataFrame T>
 inline void checkinherits(T&, const char*);
 template<class T>
 inline bool is_item_in_obj(const T, int);
@@ -43,7 +52,7 @@ template<class T>
 inline void prefixvecstr(vector<string>&, const vector<T>&);
 inline bool prefixwithnames(vector<string>&, RObject&);
 inline string str_tolower(string);
-template<class T>
+template<List_or_DataFrame T>
 int nameinobj(const T, const char*);
 RObject getnames(const DataFrame);
 
@@ -59,7 +68,7 @@ struct fmt::formatter<CoordType>: formatter<string_view>
 };
 
 inline const CoordType get_coordtype(int);
-template<class T>
+template<NumericVector_or_DataFrame T>
 inline const CoordType get_coordtype(const T&);
 inline int coordtype_to_int(CoordType);
 
@@ -81,8 +90,7 @@ struct FamousFive {
 
 inline FamousFive::~FamousFive()
 {
-//	fmt::print("§{} ", "~FamousFive()"); _ctrsgn(typeid(*this), true);
-//	std::fflush(nullptr);
+//	fmt::print("§{} ", "~FamousFive()"); _ctrsgn(typeid(*this), true); std::fflush(nullptr);
 }	
 
 /// __________________________________________________
@@ -132,209 +140,28 @@ class Coordbase;
 class Coord;
 class WayPoint;
 
-
 /// __________________________________________________
-/// __________________________________________________
-/// Templated coord type conversion functors
-
-template<CoordType type>
-class Convertor {
-	protected:
-		const FamousFive& ff; 
-	public:
-		Convertor(const FamousFive& _ff) : ff(_ff)
-		{
-//			fmt::print("§Convertor<CoordType::{}>::Convertor()(const FamousFive&) ", type); _ctrsgn(typeid(*this));
-			std::fflush(nullptr);}
-		~Convertor() = default;
-//		~Convertor() { fmt::print("§Convertor<CoordType::{}>::~Convertor() ", type); _ctrsgn(typeid(*this), true); }
-		double operator()(double n);
-};
-
-
-/// __________________________________________________
-/// Default operator(), for decimal degrees
-template<CoordType type>
-inline double Convertor<type>::operator()(double n)
-{
-//	fmt::print("@Convertor<CoordType::{}>::operator() [default]\n", type);
-	return ff.get_decdeg(n);
-}
-
-
-/// __________________________________________________
-/// Specialised operator() for degrees and minutes
-template<>
-inline double Convertor<CoordType::degmin>::operator()(double n)
-{
-//	fmt::print("@{}\n", "Convertor<CoordType::degmin>::operator()");
-	return ff.get_deg(n) * 1e2 + ff.get_decmin(n);
-}
-
-
-/// __________________________________________________
-/// Specialised operator() for degrees, minutes and seconds
-template<>
-inline double Convertor<CoordType::degminsec>::operator()(double n)
-{
-//	fmt::print("@{}\n", "Convertor<CoordType::degminsec>::operator()");
-	return ff.get_deg(n) * 1e4 + ff.get_min(n) * 1e2 + ff.get_sec(n);
-}
-
-
-/// __________________________________________________
-/// __________________________________________________
-/// Templated coord formatting functors
-template<CoordType type>
-class Format {
-	protected:
-		const FamousFive& ff;
-	public:
-		Format(const FamousFive& _ff) : ff(_ff)
-		{
-//			fmt::print("§Format<CoordType::{}>::Format()(const FamousFive&) ", type); _ctrsgn(typeid(*this));
-//			std::fflush(nullptr);
-		}
-		~Format() = default;
-//		~Format() { fmt::print("§Format<CoordType::{}>::~Format() ", type); _ctrsgn(typeid(*this), true); }
-		string operator()(double n) const;
-};
-
-
-/// __________________________________________________
-/// Default operator(), for decimal degrees
-template<CoordType type>
-inline string Format<type>::operator()(double n) const
-{
-//	fmt::print("@Format<CoordType::{}>::operator() [default]\n", type);
-	return fmt::format("{:>{}.{}f}\u00B0", ff.get_decdeg(n), 11, 6);
-}
-
-/// __________________________________________________
-/// Specialised operator() for degrees and minutes
-template<>
-inline string Format<CoordType::degmin>::operator()(double n) const
-{
-//	fmt::print("@Format<CoordType::{}>::operator()\n", CoordType::degmin);
-	return fmt::format("{:>{}}\u00B0", abs(ff.get_deg(n)), 3) +
-		   fmt::format("{:0>{}.{}f}\u2032", fabs(ff.get_decmin(n)), 7, 4);
-}
-
-/// __________________________________________________
-/// Specialised operator() for degrees, minutes and seconds
-template<>
-inline string Format<CoordType::degminsec>::operator()(double n) const
-{
-//	fmt::print("@Format<CoordType::{}>::operator()\n", CoordType::degminsec);
-	return fmt::format("{:>{}}\u00B0", abs(ff.get_deg(n)), 3) +
-		   fmt::format("{:0>{}}\u2032", abs(ff.get_min(n)), 2) +
-		   fmt::format("{:0>{}.{}f}\u2033", fabs(ff.get_sec(n)), 5, 2);
-}
-
-
-/// __________________________________________________
-/// __________________________________________________
-/// Formatting functors for latitude and longitude
-
-/// Default functor for degrees, minutes (and seconds)
-template<class T, CoordType type>
-class FormatLL {
-		const FamousFive& ff; 
-		vector<bool>::const_iterator ll_it;
-		int ll_size;
-	public:
-		FormatLL(const FamousFive& _ff, const vector<bool>& ll) : ff(_ff), ll_it(ll.begin()), ll_size(ll.size())
-		{
-			static_assert(std::is_same<Coord, T>::value || std::is_same<WayPoint, T>::value, "T must be Coord or WayPoint");
-//			fmt::print("§FormatLL<{}, CoordType::{}>::FormatLL(const FamousFive&, vector<bool>&) ", "Coord or WayPoint", type); _ctrsgn(typeid(*this));
-//			std::fflush(nullptr);
-		}
-		~FormatLL() = default;
-//		~FormatLL() { fmt::print("§FormatLL<{}, CoordType::{}>::~FormatLL() ", "Coord or WayPoint", type); _ctrsgn(typeid(*this), true); }
-		string operator()(string ostr, double n)
-		{
-//			fmt::print("@FormatLL<{}, CoordType::{}>::operator(string, double) [default]\n", "Coord or WayPoint", type);
-			return ostr += ll_size ? cardpoint(ff.get_decmin(n) < 0, ll_size > 1 ? *ll_it++ : *ll_it) : cardi_b(ff.get_decmin(n) < 0);
-		}
-};
-
-/// __________________________________________________
-/// Specialised functor for decimal degrees Coord
-template<>
-class FormatLL<Coord, CoordType::decdeg> {
-		vector<bool>::const_iterator ll_it;
-		int ll_size;
-	public:
-		FormatLL(const FamousFive& _ff, const vector<bool>& ll) : ll_it(ll.begin()), ll_size(ll.size())
-		{
-//			fmt::print("§FormatLL<{}, CoordType::{}>::FormatLL(const FamousFive&, vector<bool>&) ", "Coord", CoordType::decdeg ); _ctrsgn(typeid(*this));
-//			std::fflush(nullptr);
-		}
-		~FormatLL() = default;
-//		~FormatLL() { fmt::print("§FormatLL<{}, CoordType::{}>::~FormatLL() ", "Coord", CoordType::decdeg); _ctrsgn(typeid(*this), true); }
-		string operator()(string ostr, double n)
-		{
-//			fmt::print("@FormatLL<{}, CoordType::{}>::operator(string, double)\n", "Coord", CoordType::decdeg);
-			if (ll_size)
-				return ostr += ((ll_size > 1 ? *ll_it++ : *ll_it) ? " lat" : " lon");
-			else
-				return ostr;
-		}
-};
-
-/// __________________________________________________
-/// Specialised functor for decimal degrees WayPoint—simply returns its argument
-template<>
-class FormatLL<WayPoint, CoordType::decdeg> {
-		vector<bool>::const_iterator ll_it;
-		int ll_size;
-	public:
-		FormatLL(const FamousFive& _ff, const vector<bool>& ll) : ll_it(ll.begin()), ll_size(ll.size())
-		{
-//			fmt::print("§FormatLL<{}, CoordType::{}>::FormatLL(const FamousFive&, vector<bool>&) ", "WayPoint", CoordType::decdeg); _ctrsgn(typeid(*this));
-//			std::fflush(nullptr);
-		}
-		~FormatLL() = default;
-//		~FormatLL() { fmt::print("§FormatLL<{}, CoordType::{}>::~FormatLL() ", "WayPoint", CoordType::decdeg); _ctrsgn(typeid(*this), true); }
-		string operator()(string ostr, double n)
-		{
-//			fmt::print("@FormatLL<{}, CoordType::{}>::operator(string, double)\n", "WayPoint", CoordType::decdeg);
-			return ostr;
-		}
-};
-
-
-/// __________________________________________________
-/// __________________________________________________
-/// Validate functor
-
-class Validator {
-		const FamousFive& ff;
-		vector<bool>::const_iterator ll_it;
-		int ll_size;
-	public:
-		Validator(const FamousFive& _ff, const vector<bool>& ll) : ff(_ff), ll_it(ll.begin()), ll_size(ll.size())
-		{
-//			fmt::print("§{} ", "Validator::Validator(const FamousFive&, vector<bool>&)"); _ctrsgn(typeid(*this));
-		}
-		~Validator() = default;
-//		~Validator() { fmt::print("§{} ", "Validator::~Validator()"); _ctrsgn(typeid(*this), true); }
-		bool operator()(double n)
-		{
-//			fmt::print("@{} validating: {: {}f}\n", "Validator()", n, 9);
-			return !((fabs(ff.get_decdeg(n)) > (ll_size && (ll_size > 1 ? *ll_it++ : *ll_it) ? 90 : 180)) ||
-				(fabs(ff.get_decmin(n)) >= 60) ||
-				(fabs(ff.get_sec(n)) >= 60));
-		}
-};
+/// Concept
+template <typename T>
+concept Coord_or_WayPoint =
+	requires (T t) {
+		t.template convert<CoordType::decdeg>();
+		t.template convert<CoordType::degmin>();
+		t.template convert<CoordType::degminsec>();
+		t.template format<CoordType::decdeg>();
+		t.template format<CoordType::degmin>();
+		t.template format<CoordType::degminsec>();
+		t.get_coordtype();
+		t.validate();
+	};
 
 
 /// __________________________________________________
 /// __________________________________________________
 ///CoordType switches
-template<class T, class U>
+template<NumericVector_or_DataFrame T, class Coord_or_WayPoint>
 void convert_switch(T, CoordType);
-template<class T>
+template<Coord_or_WayPoint T>
 vector<string> format_switch(const T&, CoordType);
 
 
@@ -346,13 +173,20 @@ class Coordbase {
 		CoordType ct;
 		const FamousFive& ff;
 
+		template<CoordType type>
+		void convert0(NumericVector);
+		void validate0(NumericVector, vector<bool>&, const vector<bool>&);
+		template<CoordType type>
+		vector<string> format0(NumericVector) const;
+
 	public:
-		Coordbase(CoordType _ct);
+		Coordbase(CoordType);
 		Coordbase(const Coordbase&) = delete;						// Disallow copying
-		Coordbase& operator=(const Coordbase&) = delete;			//  ——— ditto ———
-		Coordbase(Coordbase&&) = delete;							// Disallow transfer ownership
+		Coordbase& operator=(const Coordbase&) = delete;				//  ——— ditto ———
+		Coordbase(Coordbase&&) = delete; 							// Disallow transfer ownership
 		Coordbase& operator=(Coordbase&&) = delete;					// Disallow moving
 		virtual ~Coordbase() = 0;
+		virtual void validate(bool) = 0;
 		CoordType get_coordtype() const;
 };
 
@@ -371,7 +205,7 @@ class Coord : public Coordbase {
 
 		template<CoordType type>
 		void convert();
-		void validate(bool warn = true);
+		void validate(bool = true);
 		template<CoordType type>
 		vector<string> format() const;
 };
@@ -385,6 +219,8 @@ class WayPoint : public Coordbase {
 		NumericVector nvlon;
 		vector<bool> validlat { false };
 		vector<bool> validlon { false };
+		template<CoordType type>
+		vector<string> format2(const bool) const;
 	public:
 		explicit WayPoint(CoordType, DataFrame);
 		~WayPoint() = default;
@@ -404,16 +240,13 @@ class WayPoint : public Coordbase {
 bool check_valid(const NumericVector);
 bool check_valid(const DataFrame);
 
-template<class T>
-bool validated(T, const char*, bool&);
-
-template<class T, class U>
-const T revalidate(const T);
+template<NumericVector_or_DataFrame T, Coord_or_WayPoint U>
+bool revalidate(const T);
 
 constexpr auto revalid_Coord = &revalidate<NumericVector, Coord>;
 constexpr auto revalid_WayPoint = &revalidate<DataFrame, WayPoint>;
 
-template<class T, class U>
+template<NumericVector_or_DataFrame T, Coord_or_WayPoint U>
 inline const T validate(const T);
 
 bool valid_ll(const DataFrame);
