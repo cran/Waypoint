@@ -5,7 +5,10 @@
 #ifndef COORDBASE_H_
 #define COORDBASE_H_
 
+#define FMT_HEADER_ONLY
+#include "fmt/base.h"		// …fmt/*.h copied to …/R/Packages/Waypoint/src.
 #include <concepts>
+
 
 /// __________________________________________________
 /// __________________________________________________
@@ -241,6 +244,13 @@ RObject getnames(const DataFrame);
 /// CoordType enum
 enum class CoordType : char { decdeg, degmin, degminsec };
 
+template<>
+struct fmt::formatter<CoordType>: formatter<string_view>
+{
+	auto format(CoordType, format_context&) const
+		-> format_context::iterator;
+};
+
 /// __________________________________________________
 /// CoordType access functions
 inline const CoordType get_coordtype(int);
@@ -308,7 +318,6 @@ struct Convertidor{
 template<DVecType T>
 struct Convertidor<T, DecDegVecDouble>{
 	FamousFive<T> ff {};
-	Convertidor() {}
 	double operator()(double n) const { return ff.get_decdeg(n); }
 };
 
@@ -317,7 +326,6 @@ struct Convertidor<T, DecDegVecDouble>{
 template<DVecType T>
 struct Convertidor<T, DegMinVecDouble>{
 	FamousFive<T> ff {};
-	Convertidor() {}
 	double operator()(double n) const { return ff.get_deg(n) * 1e2 + ff.get_decmin(n); }
 };
 
@@ -326,7 +334,6 @@ struct Convertidor<T, DegMinVecDouble>{
 template<DVecType T>
 struct Convertidor<T, DegMinSecVecDouble>{
 	FamousFive<T> ff {};
-	Convertidor() {}
 	double operator()(double n) const { return ff.get_deg(n) * 1e4 + ff.get_min(n) * 1e2 + ff.get_sec(n); }
 };
 
@@ -355,7 +362,6 @@ struct Formateador{
 template<DVecType T>
 struct Formateador<T, DecDegVecString>{
 	FamousFive<T> ff {};
-	Formateador() {}
 	ostringstream ostrstr;
 	string operator()(double n)
 	{
@@ -370,14 +376,12 @@ struct Formateador<T, DecDegVecString>{
 template<DVecType T>
 struct Formateador<T, DegMinVecString>{
 	FamousFive<T> ff {};
-	Formateador() {}
 	ostringstream ostrstr;
 	string operator()(double n)
 	{
 		auto deg {abs(ff.get_deg(n))};
 		auto min {fabs(ff.get_decmin(n))};
-		bool bump { round2(min) > 59.99995 };
-		if (bump) {
+		if (round2(min) > 59.99995) {
 			++deg;
 			min = 0;
 		} 
@@ -393,14 +397,12 @@ struct Formateador<T, DegMinVecString>{
 template<DVecType T>
 struct Formateador<T, DegMinSecVecString>{
 	FamousFive<T> ff {};
-	Formateador() {}
 	ostringstream ostrstr;
 	string operator()(double n)
 	{
 		auto min {abs(ff.get_min(n))};
 		auto sec {fabs(ff.get_sec(n))};
-		bool bump { round2(sec) > 59.995 };
-		if (bump) {
+		if (round2(sec) > 59.995) {
 			++min;
 			sec = 0;
 		} 
@@ -488,11 +490,8 @@ class Coords {
 		Coords& operator=(const Coords&) = delete;					//  ——— ditto ———
 		Coords(Coords&&) = delete;									// Disallow transfer ownership
 		Coords& operator=(Coords&&) = delete;						// Disallow moving
-#if DEBUG == 0
-		~Coords() = default;
-#elif DEBUG > 0
-		~Coords() { _ctrsgn(typeid(*this), false); }
-#endif
+		virtual ~Coords() = 0;
+
 		template<typename U, template <typename V> typename F>
 		vector<U> conform(CoordType) const;							// Non-const return type avoids making unnecessary copy
 		const vector<bool> validate() const;
